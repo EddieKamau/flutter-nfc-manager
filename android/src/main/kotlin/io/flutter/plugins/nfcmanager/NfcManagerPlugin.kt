@@ -22,6 +22,10 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.lang.Exception
 import java.util.*
@@ -146,175 +150,180 @@ class NfcManagerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
   private fun handleNdefRead(call: MethodCall, result: Result) {
-    tagHandler(call, result, { Ndef.get(it) }) {
-      val message = it.ndefMessage
-      result.success(if (message == null) null else getNdefMessageMap(message))
+    tagHandler(call, result, { Ndef.get(it) }) { tech ->
+      val message = tech.ndefMessage
+      if (message == null) null else getNdefMessageMap(message)
     }
   }
 
   private fun handleNdefWrite(call: MethodCall, result: Result) {
-    tagHandler(call, result, { Ndef.get(it) }) {
+    tagHandler(call, result, { Ndef.get(it) }) {tech ->
       val message = getNdefMessage(call.argument<Map<String, Any?>>("message")!!)
-      it.writeNdefMessage(message)
-      result.success(null)
+      tech.writeNdefMessage(message)
+      null
     }
   }
 
   private fun handleNdefWriteLock(call: MethodCall, result: Result) {
-    tagHandler(call, result, { Ndef.get(it) }) {
-      it.makeReadOnly()
-      result.success(null)
+    tagHandler(call, result, { Ndef.get(it) }) { tech ->
+      tech.makeReadOnly()
+      null
     }
   }
 
   private fun handleNfcATransceive(call: MethodCall, result: Result) {
-    tagHandler(call, result, { NfcA.get(it) }) {
+    tagHandler(call, result, { NfcA.get(it) }) { tech ->
       val data = call.argument<ByteArray>("data")!!
-      result.success(it.transceive(data))
+      tech.transceive(data)
     }
   }
 
   private fun handleNfcBTransceive(call: MethodCall, result: Result) {
-    tagHandler(call, result, { NfcB.get(it) }) {
+    tagHandler(call, result, { NfcB.get(it) }) { tech ->
       val data = call.argument<ByteArray>("data")!!
-      result.success(it.transceive(data))
+      tech.transceive(data)
     }
   }
 
   private fun handleNfcFTransceive(call: MethodCall, result: Result) {
-    tagHandler(call, result, { NfcF.get(it) }) {
+    tagHandler(call, result, { NfcF.get(it) }) { tech ->
       val data = call.argument<ByteArray>("data")!!
-      result.success(it.transceive(data))
+      tech.transceive(data)
     }
   }
 
   private fun handleNfcVTransceive(call: MethodCall, result: Result) {
-    tagHandler(call, result, { NfcV.get(it) }) {
+    tagHandler(call, result, { NfcV.get(it) }) { tech ->
       val data = call.argument<ByteArray>("data")!!
-      result.success(it.transceive(data))
+      tech.transceive(data)
     }
   }
 
   private fun handleIsoDepTransceive(call: MethodCall, result: Result) {
-    tagHandler(call, result, { IsoDep.get(it) }) {
+    tagHandler(call, result, { IsoDep.get(it) }) { tech ->
       val data = call.argument<ByteArray>("data")!!
-      result.success(it.transceive(data))
+      tech.transceive(data)
     }
   }
 
   private fun handleMifareClassicAuthenticateSectorWithKeyA(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareClassic.get(it) }) {
+    tagHandler(call, result, { MifareClassic.get(it) }) { tech ->
       val sectorIndex = call.argument<Int>("sectorIndex")!!
       val key = call.argument<ByteArray>("key")!!
-      result.success(it.authenticateSectorWithKeyA(sectorIndex, key))
+      tech.authenticateSectorWithKeyA(sectorIndex, key)
     }
   }
 
   private fun handleMifareClassicAuthenticateSectorWithKeyB(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareClassic.get(it) }) {
+    tagHandler(call, result, { MifareClassic.get(it) }) { tech ->
       val sectorIndex = call.argument<Int>("sectorIndex")!!
       val key = call.argument<ByteArray>("key")!!
-      result.success(it.authenticateSectorWithKeyB(sectorIndex, key))
+      tech.authenticateSectorWithKeyB(sectorIndex, key)
     }
   }
 
   private fun handleMifareClassicIncrement(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareClassic.get(it) }) {
+    tagHandler(call, result, { MifareClassic.get(it) }) { tech ->
       val blockIndex = call.argument<Int>("blockIndex")!!
       val value = call.argument<Int>("value")!!
-      it.increment(blockIndex, value)
-      result.success(null)
+      tech.increment(blockIndex, value)
+      null
     }
   }
 
   private fun handleMifareClassicDecrement(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareClassic.get(it) }) {
+    tagHandler(call, result, { MifareClassic.get(it) }) { tech ->
       val blockIndex = call.argument<Int>("blockIndex")!!
       val value = call.argument<Int>("value")!!
-      it.decrement(blockIndex, value)
-      result.success(null)
+      tech.decrement(blockIndex, value)
+      null
     }
   }
 
   private fun handleMifareClassicReadBlock(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareClassic.get(it) }) {
+    tagHandler(call, result, { MifareClassic.get(it) }) { tech ->
       val blockIndex = call.argument<Int>("blockIndex")!!
-      result.success(it.readBlock(blockIndex))
+      tech.readBlock(blockIndex)
     }
   }
 
   private fun handleMifareClassicWriteBlock(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareClassic.get(it) }) {
+    tagHandler(call, result, { MifareClassic.get(it) }) { tech ->
       val blockIndex = call.argument<Int>("blockIndex")!!
       val data = call.argument<ByteArray>("data")!!
-      it.writeBlock(blockIndex, data)
-      result.success(null)
+      tech.writeBlock(blockIndex, data)
+      null
     }
   }
 
   private fun handleMifareClassicRestore(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareClassic.get(it) }) {
+    tagHandler(call, result, { MifareClassic.get(it) }) { tech ->
       val blockIndex = call.argument<Int>("blockIndex")!!
-      it.restore(blockIndex)
-      result.success(null)
+      tech.restore(blockIndex)
+      null
     }
   }
 
   private fun handleMifareClassicTransfer(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareClassic.get(it) }) {
+    tagHandler(call, result, { MifareClassic.get(it) }) { tech ->
       val blockIndex = call.argument<Int>("blockIndex")!!
-      it.transfer(blockIndex)
-      result.success(null)
+      tech.transfer(blockIndex)
+      null
     }
   }
 
   private fun handleMifareClassicTransceive(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareClassic.get(it) }) {
+    tagHandler(call, result, { MifareClassic.get(it) }) { tech ->
       val data = call.argument<ByteArray>("data")!!
-      result.success(it.transceive(data))
+      tech.transceive(data)
     }
   }
 
   private fun handleMifareUltralightReadPages(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareUltralight.get(it) }) {
+    tagHandler(call, result, { MifareUltralight.get(it) }) { tech ->
       val pageOffset = call.argument<Int>("pageOffset")!!
-      result.success(it.readPages(pageOffset))
+      tech.readPages(pageOffset)
     }
   }
 
   private fun handleMifareUltralightWritePage(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareUltralight.get(it) }) {
+    tagHandler(call, result, { MifareUltralight.get(it) }) { tech ->
       val pageOffset = call.argument<Int>("pageOffset")!!
       val data = call.argument<ByteArray>("data")!!
-      it.writePage(pageOffset, data)
-      result.success(null)
+      tech.writePage(pageOffset, data)
+      null
     }
   }
 
   private fun handleMifareUltralightTransceive(call: MethodCall, result: Result) {
-    tagHandler(call, result, { MifareUltralight.get(it) }) {
+    tagHandler(call, result, { MifareUltralight.get(it) }) { tech ->
       val data = call.argument<ByteArray>("data")!!
-      result.success(it.transceive(data))
+      tech.transceive(data)
     }
   }
 
   private fun handleNdefFormatableFormat(call: MethodCall, result: Result) {
-    tagHandler(call, result, { NdefFormatable.get(it) }) {
+    tagHandler(call, result, { NdefFormatable.get(it) }) { tech ->
       val firstMessage = getNdefMessage(call.argument<Map<String, Any?>>("firstMessage")!!)
-      it.format(firstMessage)
-      result.success(null)
+      tech.format(firstMessage)
+      null
     }
   }
 
   private fun handleNdefFormatableFormatReadOnly(call: MethodCall, result: Result) {
-    tagHandler(call, result, { NdefFormatable.get(it) }) {
+    tagHandler(call, result, { NdefFormatable.get(it) }) { tech ->
       val firstMessage = getNdefMessage(call.argument<Map<String, Any?>>("firstMessage")!!)
-      it.formatReadOnly(firstMessage)
-      result.success(null)
+      tech.formatReadOnly(firstMessage)
+      null
     }
   }
 
-  private fun <T: TagTechnology> tagHandler(call: MethodCall, result: Result, getMethod: (Tag) -> T?, callback: (T) -> Unit) {
+  private fun <T: TagTechnology> tagHandler(
+    call: MethodCall,
+    result: Result,
+    getMethod: (Tag) -> T?,
+    callback: suspend (T) -> Any?
+  ) {
     val tag = tags[call.argument<String>("handle")!!] ?: run {
       result.error("invalid_parameter", "Tag is not found", null)
       return
@@ -325,11 +334,19 @@ class NfcManagerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       return
     }
 
-    try {
-      forceConnect(tech)
-      callback(tech)
-    } catch (e: Exception) {
-      result.error("io_exception", e.localizedMessage, null)
+    CoroutineScope(Dispatchers.IO).launch{
+      try {
+        forceConnect(tech)
+//        callback(tech)
+        val callbackResult = callback(tech)
+        withContext(Dispatchers.Main) {
+          result.success(callbackResult)
+        }
+      } catch (e: Exception) {
+        withContext(Dispatchers.Main) {
+          result.error("io_exception", e.localizedMessage, null)
+        }
+      }
     }
   }
 
